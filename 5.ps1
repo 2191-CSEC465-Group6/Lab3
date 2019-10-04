@@ -1,9 +1,102 @@
-﻿#Author: Thomas Coburn
+﻿#Author: Thomas Coburn, references code form Tao Yang: (https://blog.tyang.org/2011/05/01/powershell-functions-get-ipv4-network-start-and-end-address/)
 
 #read in text file
 $path = "C:\Users\Thomas\Documents\RIT\Fall 2019\Net Audit\sample_input.txt"
 $text = Get-Content($path)
 
+#checks if IP range is up
+function Range-Helper($start, $end)
+{
+    #split ip address by each octet
+    $start = ($start -split "\.")
+    $end = ($end -split "\.")
+    
+    #initialize variables for loop
+    $a = [int]$start[0]
+    $b = [int]$end[0]
+
+    $c = [int]$start[1]
+    $d = [int]$end[1]
+
+    $e = [int]$start[2]
+    $f = [int]$end[2]
+
+    $g = [int]$start[3]
+    $h = [int]$end[3]
+    
+    #valid will contain list of IPs that are up
+    $valid = @()
+
+    #nested while to check each IP octet
+    While($a -le $b)
+    {
+        $c = [int]$start[1]
+        While($c -le $d)
+        {
+            $e = [int]$start[2]
+            while($e -le $f)
+            {
+                $g = [int]$start[3]
+                while($g -le $h)
+                {
+                    #build current address iteration
+                    $addr = ($a.ToString() + "."+ $c.ToString() + "." + $e.ToString() + "." + $g.ToString())
+                    
+                    Write-host $addr
+                    #test connection
+                    if(Test-Connection $addr -count 1 -quiet)
+                    {
+                        #if its up, add to list of valid IPs
+                        $valid+=$addr
+                    }
+                    $g++    
+                }
+                $e++
+            }
+            $c++
+        }
+        $a++
+    }
+
+    return $valid
+  
+}
+
+#helper for CIDR notation input
+function CIDR-Helper($range)
+{
+    #split IP and CIDR range
+    $range = ($range -split "/")
+    $ip = $range[0]
+    [int]$CIDR = $range[1]
+
+    
+    #calculate start IP
+    $networkIP = ([System.Net.IPAddress]$ip).GetAddressBytes()
+    [Array]::Reverse($networkIP)
+    $networkIP = ([System.Net.IPAddress]($networkIP -join ".")).Address
+    $start = $networkIP +1
+    $start = [System.Net.IPAddress]$start
+    #convert start IP back to String
+    $start = $start.ToString()
+    $temp = ($start -split "\.")
+    $start = ($temp[3,2,1,0] -join ".")
+
+    #calculate end IP
+    $IPLength = 32-$CIDR
+    $numberOfIPs = ([System.Math]::Pow(2, $IPLength)) -1
+    $networkIP = ([System.Net.IPAddress]$ip).GetAddressBytes()
+    [Array]::Reverse($NetworkIP)
+    $networkIP = ([System.Net.IPAddress]($networkIP -join ".")).Address
+    $end = $networkIP + $numberOfIPs
+    $end = [System.Net.IPAddress]$end
+    #convert end IP back to String
+    $end = $end.ToString()
+
+    #evaluate IPs that are up
+    $valid = Range-Helper -start $start -end $end
+    return $valid
+}
 
 #parse the file line by line
 function Parse-File($text)
@@ -39,57 +132,14 @@ function Get-Hosts($range)
         $range = ($range -split "-")
         $start = $range[0]
         $end = $range[1]
+        
+        Range-Helper -start $start -end $end
+    }
 
-        #split ip address by each octet
-        $start = ($start -split "\.")
-        $end = ($end -split "\.")
-    
-        #initialize variables for loop
-        $a = [int]$start[0]
-        $b = [int]$end[0]
-
-        $c = [int]$start[1]
-        $d = [int]$end[1]
-
-        $e = [int]$start[2]
-        $f = [int]$end[2]
-
-        $g = [int]$start[3]
-        $h = [int]$end[3]
-    
-        #valid will contain list of IPs that are up
-        $valid = @()
-
-        #nested while to check each IP octet
-        While($a -le $b)
-        {
-            $c = [int]$start[1]
-            While($c -le $d)
-            {
-                $e = [int]$start[2]
-                while($e -le $f)
-                {
-                    $g = [int]$start[3]
-                    while($g -le $h)
-                    {
-                        #build current address iteration
-                        $addr = ($a.ToString() + "."+ $c.ToString() + "." + $e.ToString() + "." + $g.ToString())
-
-                        #test connection
-                        if(Test-Connection $addr -count 1 -quiet)
-                        {
-                            #if its up, add to list of valid IPs
-                            $valid+=$addr
-                        }
-                        $g++    
-                    }
-                    $e++
-                }
-                $c++
-            }
-            $a++
-        }
-  
+    #test connection for CIDR notation format
+    if($range -match "/")
+    {
+        $valid = CIDR-Helper -range $range
     }
 
     #test connection for single IP format ex) "8.8.8.8"
