@@ -1,7 +1,7 @@
 ﻿#Author: Thomas Coburn
 
 #Take in File
-$path = ""
+$path = "hosts.txt"
 $text = Get-Content $path
 
 # Returns IP addresses associated with domain/host name
