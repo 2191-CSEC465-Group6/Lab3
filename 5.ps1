@@ -42,7 +42,7 @@ function Range-Helper($start, $end)
                     #build current address iteration
                     $addr = ($a.ToString() + "."+ $c.ToString() + "." + $e.ToString() + "." + $g.ToString())
                     
-                    Write-host $addr
+                    Write-host "Checking if $addr is up..."
                     #test connection
                     if(Test-Connection $addr -count 1 -quiet)
                     {
