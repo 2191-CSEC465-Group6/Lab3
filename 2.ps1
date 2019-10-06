@@ -1,7 +1,7 @@
 ﻿#Author: Thomas Coburn
 
 #Take in File
-$path = "C:\Users\Thomas\Documents\RIT\Fall 2019\Net Audit\hosts.txt"
+$path = ""
 $text = Get-Content $path
 
 # Returns IP addresses associated with domain/host name
