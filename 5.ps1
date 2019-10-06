@@ -1,7 +1,7 @@
 ﻿#Author: Thomas Coburn, references code form Tao Yang: (https://blog.tyang.org/2011/05/01/powershell-functions-get-ipv4-network-start-and-end-address/)
 
 #read in text file
-$path = ""
+$path = "port_scan.txt"
 $text = Get-Content($path)
 
 #checks if IP range is up
