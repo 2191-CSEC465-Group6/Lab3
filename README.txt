@@ -4,6 +4,9 @@ ex) www.google.com
 www.amazon.com
 DESKTOP-HEPE84U
 
+After changing the path to the input file, you can run it using powershell .\2.ps1
+
+
 3. The command line argument should be a range of valid IPv4 addresses in either dash notation (8.8.8.1-8.8.8.10) or CIDR notation (8.8.8.0/24)
 ex) python .\3.py 8.8.8.0/24
 
@@ -17,6 +20,8 @@ dash notation (192.168.10.1-192.168.10.5) and CIDR notation (192.168.10.1/24). T
 a space between the dash and the IP addresses. There also must not be a space between the IP address,
 the CIDR number and the slash. There are 2 accepted formats for port ranges: dash notation (1-1000)
 and comma delimited notation (21,22,23). There must not be a space between the dashes or commas.
+
+After changing the path to the input file, you can run it using powershell .\5.ps1
 
 6. Change the --server argument at the end of the file to the NTP server you want to query.
 The argument takes either a fully qualified hostname or an IP address. The default is 'ntp.rit.edu' if no argument is provided.
