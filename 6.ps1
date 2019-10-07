@@ -4,7 +4,8 @@
 Function Get-NtpRoute {
     Param (
         [String]$Server = 'ntp.rit.edu',
-        [Switch]$NoDns # Do not attempt to lookup V3 secondary-server referenceIdentifier
+        [Switch]$NoDns, # Do not attempt to lookup V3 secondary-server referenceIdentifier
+        [Switch]$NoGetList # Do not attempt to send MON_GETLIST command to $Server
     )
 
     # Construct a 48-byte client NTP time packet to send to the specified server
@@ -13,7 +14,7 @@ Function Get-NtpRoute {
     [Byte[]]$NtpData = , 0 * 48
     $NtpData[0] = 0x1B    # NTP Request header in first byte
     # [Byte[]]$NtpData = 0x17,0x00,0x03,0x2a,0x00,0x00,0x00,0x00
-    Write-Host [System.Text.Encoding]::ASCII.GetString($NtpData)
+    # Write-Host [System.Text.Encoding]::ASCII.GetString($NtpData)
 
 
     $Socket = New-Object Net.Sockets.Socket([Net.Sockets.AddressFamily]::InterNetwork, [Net.Sockets.SocketType]::Dgram, [Net.Sockets.ProtocolType]::Udp)
@@ -71,6 +72,8 @@ Function Get-NtpRoute {
                 # Version 3 Secondary Server, RefId = IPv4 address of reference source
                 $ReferenceIdentifier = $NtpData[12..15] -join '.'
 
+                Get-NtpRoute($ReferenceIdentifier)
+
                 If (-Not $NoDns) {
                     If ($DnsLookup = Resolve-DnsName $ReferenceIdentifier -QuickTimeout -ErrorAction SilentlyContinue) {
                         $ReferenceIdentifier = "$ReferenceIdentifier <$($DnsLookup.NameHost)>"
@@ -80,6 +83,8 @@ Function Get-NtpRoute {
             }
 
             4 {
+                Get-NtpRoute($ReferenceIdentifier)
+                
                 # Version 4 Secondary Server, RefId = low-order 32-bits of  
                 # latest transmit time of reference source
                 $ReferenceIdentifier = [BitConverter]::ToUInt32($NtpData[15..12], 0) * 1000 / 0x100000000
