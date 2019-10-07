@@ -1,5 +1,5 @@
 2. First change the $path variable to point to our provided sample text file (hosts.txt).
-Then add the hosts you want to resolve to the file. There can only be one hostname per line.
+Then add the hosts you want to resolve to the file. There can only be one hostname per line. Before running the script change the last line of the sample file to your device's hostname.
 ex) www.google.com
 www.amazon.com
 DESKTOP-HEPE84U
