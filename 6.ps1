@@ -24,14 +24,14 @@ Function Get-NtpRoute {
     }
     Catch {
         Write-Error "Failed to connect to server $Server"
-        Throw 
+        Throw
     }
 
     # NTP Transaction -------------------------------------------------------
-    
+
     Try {
         [Void]$Socket.Send($NtpData)
-        [Void]$Socket.Receive($NtpData)  
+        [Void]$Socket.Receive($NtpData)
     }
     Catch {
         Write-Error "Failed to communicate with server $Server"
@@ -46,10 +46,10 @@ Function Get-NtpRoute {
         Switch ($VN) {
             2 {
                 [Byte[]]$MruData = 0x17, 0x00, 0x03, 0x2a, 0x00, 0x00, 0x00, 0x00
-    
+
                 Try {
                     [Void]$Socket.Send($MruData)
-                    [Void]$Socket.Receive($MruData)  
+                    [Void]$Socket.Receive($MruData)
                 }
                 Catch {
                     Write-Error "MON_GETLIST failed with server $Server"
@@ -61,7 +61,7 @@ Function Get-NtpRoute {
 
                 Try {
                     [Void]$Socket.Send($MruData)
-                    [Void]$Socket.Receive($MruData)  
+                    [Void]$Socket.Receive($MruData)
                 }
                 Catch {
                     Write-Error "MON_GETLIST failed with server $Server"
@@ -72,7 +72,7 @@ Function Get-NtpRoute {
 
     # End of NTP Transaction ------------------------------------------------
 
-    $Socket.Shutdown("Both") 
+    $Socket.Shutdown("Both")
     $Socket.Close()
 
     $Stratum = [UInt16]$NtpData[1]   # Actually [UInt8] but we don't have one of those...
@@ -84,7 +84,7 @@ Function Get-NtpRoute {
     }
 
     # Determine the format of the ReferenceIdentifier field and decode
-    
+
     If ($Stratum -le 1) {
         # Response from Primary Server.  RefId is ASCII string describing source
         $ReferenceIdentifier = [String]([Char[]]$NtpData[12..15] -join '')
@@ -106,8 +106,8 @@ Function Get-NtpRoute {
                 Break
             }
 
-            4 {                
-                # Version 4 Secondary Server, RefId = low-order 32-bits of  
+            4 {
+                # Version 4 Secondary Server, RefId = low-order 32-bits of
                 # latest transmit time of reference source
                 $ReferenceIdentifier = [BitConverter]::ToUInt32($NtpData[15..12], 0) * 1000 / 0x100000000
                 Break
@@ -132,7 +132,7 @@ Function Get-NtpRoute {
     $NtpTimeObj
 
     # Recursively call when Stratum is not primary
-    
+
     If ($Stratum -gt 1) {
         Switch ($VN) {
             3 {
@@ -143,7 +143,7 @@ Function Get-NtpRoute {
             }
 
             4 {
-                # Version 4 Secondary Server, RefId = low-order 32-bits of  
+                # Version 4 Secondary Server, RefId = low-order 32-bits of
                 # latest transmit time of reference source
                 $ReferenceIdentifier = [BitConverter]::ToUInt32($NtpData[15..12], 0) * 1000 / 0x100000000
                 Get-NtpRoute -Server $ReferenceIdentifier -NoGetList
