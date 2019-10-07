@@ -13,9 +13,6 @@ Function Get-NtpRoute {
 
     [Byte[]]$NtpData = , 0 * 48
     $NtpData[0] = 0x1B    # NTP Request header in first byte
-    # [Byte[]]$NtpData = 0x17,0x00,0x03,0x2a,0x00,0x00,0x00,0x00
-    # Write-Host [System.Text.Encoding]::ASCII.GetString($NtpData)
-
 
     $Socket = New-Object Net.Sockets.Socket([Net.Sockets.AddressFamily]::InterNetwork, [Net.Sockets.SocketType]::Dgram, [Net.Sockets.ProtocolType]::Udp)
     $Socket.SendTimeOut = 2000  # ms
@@ -40,14 +37,42 @@ Function Get-NtpRoute {
         Throw
     }
 
+    # We now have an NTP response packet in $NtpData to decode.
+
+    $VN = ($NtpData[0] -band 0x38) -shr 3
+
+    If (-Not $NoGetList) {
+        Switch ($VN) {
+            2 {
+                [Byte[]]$MruData = 0x17, 0x00, 0x03, 0x2a, 0x00, 0x00, 0x00, 0x00
+    
+                Try {
+                    [Void]$Socket.Send($MruData)
+                    [Void]$Socket.Receive($MruData)  
+                }
+                Catch {
+                    Write-Error "MON_GETLIST failed with server $Server"
+                }
+            }
+
+            3 {
+                [Byte[]]$MruData = 0x1b, 0x00, 0x03, 0x2a, 0x00, 0x00, 0x00, 0x00
+
+                Try {
+                    [Void]$Socket.Send($MruData)
+                    [Void]$Socket.Receive($MruData)  
+                }
+                Catch {
+                    Write-Error "MON_GETLIST failed with server $Server"
+                }
+            }
+        }
+    }
+
     # End of NTP Transaction ------------------------------------------------
 
     $Socket.Shutdown("Both") 
     $Socket.Close()
-
-    # We now have an NTP response packet in $NtpData to decode.
-
-    $VN = ($NtpData[0] -band 0x38) -shr 3
 
     $Stratum = [UInt16]$NtpData[1]   # Actually [UInt8] but we don't have one of those...
     $Stratum_text = Switch ($Stratum) {
@@ -72,8 +97,6 @@ Function Get-NtpRoute {
                 # Version 3 Secondary Server, RefId = IPv4 address of reference source
                 $ReferenceIdentifier = $NtpData[12..15] -join '.'
 
-                Get-NtpRoute($ReferenceIdentifier)
-
                 If (-Not $NoDns) {
                     If ($DnsLookup = Resolve-DnsName $ReferenceIdentifier -QuickTimeout -ErrorAction SilentlyContinue) {
                         $ReferenceIdentifier = "$ReferenceIdentifier <$($DnsLookup.NameHost)>"
@@ -82,9 +105,7 @@ Function Get-NtpRoute {
                 Break
             }
 
-            4 {
-                Get-NtpRoute($ReferenceIdentifier)
-                
+            4 {                
                 # Version 4 Secondary Server, RefId = low-order 32-bits of  
                 # latest transmit time of reference source
                 $ReferenceIdentifier = [BitConverter]::ToUInt32($NtpData[15..12], 0) * 1000 / 0x100000000
@@ -100,14 +121,32 @@ Function Get-NtpRoute {
     # Finally, create output object and return
 
     $NtpTimeObj = [PSCustomObject]@{
-        NtpServer = $Server
-        NtpVersionNumber = $VN
-        Stratum = $Stratum
-        Stratum_text = $Stratum_text
+        NtpServer           = $Server
+        NtpVersionNumber    = $VN
+        Stratum             = $Stratum
+        Stratum_text        = $Stratum_text
         ReferenceIdentifier = $ReferenceIdentifier
     }
 
     $NtpTimeObj
+
+    If ($Stratum -gt 1) {
+        Switch ($VN) {
+            3 {
+                # Version 3 Secondary Server, RefId = IPv4 address of reference source
+                $ReferenceIdentifier = $NtpData[12..15] -join '.'
+
+                Get-NtpRoute -Server $ReferenceIdentifier -NoGetList
+            }
+
+            4 {
+                # Version 4 Secondary Server, RefId = low-order 32-bits of  
+                # latest transmit time of reference source
+                $ReferenceIdentifier = [BitConverter]::ToUInt32($NtpData[15..12], 0) * 1000 / 0x100000000
+                Get-NtpRoute -Server $ReferenceIdentifier -NoGetList            
+            }
+        }
+    }
 }
 
 Get-NtpRoute('ntp.rit.edu')
