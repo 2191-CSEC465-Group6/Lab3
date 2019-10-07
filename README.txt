@@ -4,6 +4,9 @@ ex) www.google.com
 www.amazon.com
 DESKTOP-HEPE84U
 
+4. The command line argument should be a file with valid IPv4 addresses stored line by line. Please refer to lab3_iplist.txt for an example input file
+ex) powershell .\4.ps1 'lab3_iplist.txt'
+
 5. First change the $path variable to point to our provided sample text file (port_scan.txt).
 Then add the IP address range and port range you would like to scan. The IP address range and
 port range must be separated by a space. There are 2 accepted formats for IP ranges:
