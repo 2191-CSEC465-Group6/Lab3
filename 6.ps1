@@ -1,4 +1,5 @@
 #Author: Robert Ellegate
+#Attributions: References code from Chris Warwick <https://github.com/ChrisWarwick/PowerShell-NTP-Time>
 #Lab 3 Question
 
 Function Get-NtpRoute {
@@ -151,4 +152,4 @@ Function Get-NtpRoute {
     }
 }
 
-Get-NtpRoute('ntp.rit.edu')
+Get-NtpRoute -Server 'ntp.rit.edu' -NoGetList
