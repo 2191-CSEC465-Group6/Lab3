@@ -118,7 +118,7 @@ Function Get-NtpRoute {
             }
         }
     }
-    # Finally, create output object and return
+    # Create output object and return
 
     $NtpTimeObj = [PSCustomObject]@{
         NtpServer           = $Server
@@ -130,6 +130,8 @@ Function Get-NtpRoute {
 
     $NtpTimeObj
 
+    # Recursively call when Stratum is not primary
+    
     If ($Stratum -gt 1) {
         Switch ($VN) {
             3 {
@@ -143,7 +145,7 @@ Function Get-NtpRoute {
                 # Version 4 Secondary Server, RefId = low-order 32-bits of  
                 # latest transmit time of reference source
                 $ReferenceIdentifier = [BitConverter]::ToUInt32($NtpData[15..12], 0) * 1000 / 0x100000000
-                Get-NtpRoute -Server $ReferenceIdentifier -NoGetList            
+                Get-NtpRoute -Server $ReferenceIdentifier -NoGetList
             }
         }
     }
