@@ -32,7 +32,6 @@ foreach($line in Get-Content $file) {
 		$Tracert_results = tracert $line
 		$Tracert_array = $Tracert_results.split(' ', [System.StringSplitOptions]::RemoveEmptyEntries)
 		
-		#Write-Host "Tracert results: " $Tracert_Array[-11]
 		
 		#find the number of hops
 		$numHops = [int]$Tracert_Array[-11] - 1
@@ -41,7 +40,6 @@ foreach($line in Get-Content $file) {
 		#equal the system's default TTL
 		$IP_TTL = [int]$TTL_array[1] + $numHops
 		
-		#Write-Host "TTL = $IP_TTL"
 		
 		#Check if the TTL value is either the Windows or Linux Default value
 		if ( $IP_TTL -eq $LinuxTTL) {
